@@ -1,14 +1,16 @@
 from dotenv import load_dotenv
 import os
+
+load_dotenv()
+
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 
+# Теперь безопасно импортировать: .env уже прочитан
 from app.database import engine, get_session, init_db
 from app.models import Link, LinkCreate, LinkRead
-
-load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 
@@ -72,4 +74,3 @@ def delete_link(link_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
     session.delete(link)
     session.commit()
-
