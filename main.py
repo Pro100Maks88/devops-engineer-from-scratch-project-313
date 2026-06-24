@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import os
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status
@@ -6,6 +7,8 @@ from contextlib import asynccontextmanager
 
 from app.database import engine, get_session, init_db
 from app.models import Link, LinkCreate, LinkRead
+
+load_dotenv()  # <-- ОБЯЗАТЕЛЬНО: читает .env и делает переменные доступными
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 
