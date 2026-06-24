@@ -8,13 +8,13 @@ from contextlib import asynccontextmanager
 from app.database import engine, get_session, init_db
 from app.models import Link, LinkCreate, LinkRead
 
-load_dotenv()  # <-- ОБЯЗАТЕЛЬНО: читает .env и делает переменные доступными
+load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8080")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()  # Создаём таблицы при старте
+    init_db()
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -72,3 +72,4 @@ def delete_link(link_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
     session.delete(link)
     session.commit()
+
