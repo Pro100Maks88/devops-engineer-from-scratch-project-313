@@ -1,15 +1,13 @@
-# app/database.py
 import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlmodel import Session, SQLModel
 
-load_dotenv()  # загружаем .env
+load_dotenv()  
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Если DATABASE_URL не задан (например, при запуске тестов), используем SQLite
 if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./test.db"
 
