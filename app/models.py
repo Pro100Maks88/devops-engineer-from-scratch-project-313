@@ -1,35 +1,22 @@
-from datetime import datetime
-from typing import Optional
+from datetime import UTC, datetime
 
 from sqlmodel import Field, SQLModel
 
-class LinkBase(SQLModel):
+
+class Link(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    original_url: str
+    short_name: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+class LinkCreate(SQLModel):
     original_url: str
     short_name: str
 
-class LinkCreate(LinkBase):
-    pass
+class LinkUpdate(SQLModel, validate_on_call=True):
+    original_url: str | None = None
+    short_name: str | None = None
 
-class LinkRead(LinkBase):
-    id: int
-    created_at: datetime
-    short_url: str
-
-    @staticmethod
-    def from_orm(link, base_url: str) -> "LinkRead":
-        return LinkRead(
-            id=link.id,
-            original_url=link.original_url,
-            short_name=link.short_name,
-            created_at=link.created_at,
-            short_url=f"{base_url.rstrip('/')}/r/{link.short_name}",
-        )
-
-class Link(LinkBase, table=True):
-    __tablename__ = "links"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 
 
