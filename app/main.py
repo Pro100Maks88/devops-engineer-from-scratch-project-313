@@ -10,7 +10,6 @@ from sqlmodel import Session, select
 from app import database
 from app.models import Link, LinkCreate, LinkUpdate
 
-database.init_db()
 
 app = FastAPI(title="Short Link Service", version="1.0.0")
 
