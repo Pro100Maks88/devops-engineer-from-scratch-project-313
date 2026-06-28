@@ -97,3 +97,80 @@ def test_unique_short_name_conflict(client):
     res = client.post("/api/links", json={"original_url": "https://y.com", "short_name": "uniq"})
     assert res.status_code == 409
     assert res.json().get("detail") == "Short name already exists"
+
+
+# --- Тесты пагинации ---
+
+def test_list_links_default_pagination(client):
+    for i in range(25):
+        client.post(
+            "/api/links",
+            json={"original_url": f"https://{i}.com", "short_name": f"short{i}"}
+        )
+
+    res = client.get("/api/links")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert len(data) == 20
+
+    assert "Content-Range" in res.headers
+    header = res.headers["Content-Range"]
+    assert header.startswith("links 0-20/")
+    total = int(header.split("/")[1])
+    assert total == 25
+
+
+def test_list_links_with_range_explicit(client):
+    for i in range(15):
+        client.post(
+            "/api/links",
+            json={"original_url": f"https://{i}.com", "short_name": f"short{i}"}
+        )
+
+    res = client.get("/api/links?range=[0,10]")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert len(data) == 10
+
+    header = res.headers["Content-Range"]
+    assert header == "links 0-10/15"
+
+
+def test_list_links_offset_range(client):
+    for i in range(12):
+        client.post(
+            "/api/links",
+            json={"original_url": f"https://{i}.com", "short_name": f"short{i}"}
+        )
+
+    res = client.get("/api/links?range=[5,10]")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert len(data) == 5
+    assert data[0]["id"] == 6
+
+    header = res.headers["Content-Range"]
+    assert header == "links 5-10/12"
+
+
+def test_list_links_invalid_range_not_json(client):
+    res = client.get("/api/links?range=not_json")
+    assert res.status_code == 400
+    assert "Invalid range parameter" in res.json().get("detail", "")
+
+
+def test_list_links_bad_format_range(client):
+    res = client.get("/api/links?range=[1,2,3]")
+    assert res.status_code == 400
+    assert "Invalid range format" in res.json().get("detail", "")
+
+test_engine = create_engine(
+    "sqlite:///./test.db",
+    echo=False,
+    future=True,
+    connect_args={"check_same_thread": False} 
+)
+
