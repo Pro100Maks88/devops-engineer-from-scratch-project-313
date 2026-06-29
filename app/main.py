@@ -15,26 +15,29 @@ app = FastAPI(title="Short Link Service", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 def get_session() -> Session:
     with Session(database.engine) as session:
         yield session
 
+
 @app.get("/ping")
 def ping():
     return {"status": "ok"}
+
 
 @app.post("/api/links", response_model=Link, status_code=status.HTTP_201_CREATED)
 def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
     existing = session.exec(
         select(Link).where(Link.short_name == link_in.short_name)
     ).first()
-    
+
     if existing:
         raise HTTPException(status_code=409, detail="Short name already exists")
 
@@ -44,11 +47,12 @@ def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
     session.refresh(link)
     return link
 
+
 @app.get("/api/links")
 def list_links(
     response: Response,
     range_param: Optional[str] = Query(default=None, alias="range"),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     start = 0
     end = 20
@@ -56,7 +60,7 @@ def list_links(
     if range_param is not None:
         try:
             parsed = json.loads(range_param)
-            
+
             if not isinstance(parsed, list):
                 raise ValueError("Range must be a list")
             if len(parsed) != 2:
@@ -68,24 +72,23 @@ def list_links(
                 raise ValueError("Start and end must be non-negative")
             if end <= start:
                 raise ValueError("End must be greater than start")
-                
+
         except json.JSONDecodeError:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid range parameter"
+                detail="Invalid range parameter",
             )
         except ValueError as e:
             msg = str(e)
-
             if "2 elements" in msg:
                 raise HTTPException(
                     status_code=400,
-                    detail="Invalid range format"
+                    detail="Invalid range format",
                 )
             else:
                 raise HTTPException(
                     status_code=400,
-                    detail="Invalid range parameter"
+                    detail="Invalid range parameter",
                 )
 
     limit = end - start
@@ -101,6 +104,7 @@ def list_links(
 
     return links
 
+
 @app.get("/api/links/{link_id}")
 def get_link(link_id: int, session: Session = Depends(get_session)):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
@@ -108,11 +112,12 @@ def get_link(link_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Link not found")
     return link
 
+
 @app.put("/api/links/{link_id}", response_model=Link)
 def update_link(
     link_id: int,
     link_in: LinkUpdate,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
     if not link:
@@ -133,6 +138,7 @@ def update_link(
     session.refresh(link)
     return link
 
+
 @app.delete("/api/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_link(link_id: int, session: Session = Depends(get_session)):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
@@ -142,3 +148,4 @@ def delete_link(link_id: int, session: Session = Depends(get_session)):
     session.delete(link)
     session.commit()
     return None
+

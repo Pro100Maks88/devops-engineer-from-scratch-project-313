@@ -7,3 +7,8 @@ venv/
 .DS_Store
 .env
 test.db
+node_modules/
+package.json
+package-lock.json
+test.db
+node_modules/

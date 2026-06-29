@@ -11,3 +11,6 @@ lint:
 
 fix:
 	uv run ruff check --fix .
+
+dev:
+	npm run dev
