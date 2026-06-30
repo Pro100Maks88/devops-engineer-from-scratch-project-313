@@ -1,8 +1,0 @@
-target-version = "py312"
-line-length = 88
-
-[lint]
-select = ["E", "F", "I", "UP"]
-
-[format]
-quote-style = "double"
