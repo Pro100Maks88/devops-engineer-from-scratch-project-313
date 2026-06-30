@@ -3,7 +3,6 @@ import json
 from typing import Optional
 
 from fastapi import FastAPI, Depends, HTTPException, status, Response, Query
-from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 from sqlmodel import Session, select
 
@@ -12,14 +11,6 @@ from app.models import Link, LinkCreate, LinkUpdate
 
 
 app = FastAPI(title="Short Link Service", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 def get_session() -> Session:

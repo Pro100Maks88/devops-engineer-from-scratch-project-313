@@ -5,10 +5,11 @@ __pycache__/
 venv/
 .python-version
 .DS_Store
-.env
+ruff.toml
 test.db
 node_modules/
 package.json
 package-lock.json
 test.db
 node_modules/
+public/
