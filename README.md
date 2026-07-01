@@ -32,9 +32,5 @@
 Приложение развернуто на Render с использованием Docker-контейнеров:
 [Демо-версия проекта]: https://devops-engineer-from-scratch-project-313-4tvi.onrender.com/
 
-## Запуск
-```bash
-make run
-```
 
 Проект выполнен в учебных целях на платформе [Hexlet](https://ru.hexlet.io/pages/about)
