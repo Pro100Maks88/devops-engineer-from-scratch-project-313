@@ -1,14 +1,11 @@
-import os
 import json
-from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, status, Response, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app import database
 from app.models import Link, LinkCreate, LinkUpdate
-
 
 app = FastAPI(title="Short Link Service", version="1.0.0")
 
@@ -42,7 +39,7 @@ def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
 @app.get("/api/links")
 def list_links(
     response: Response,
-    range_param: Optional[str] = Query(default=None, alias="range"),
+    range_param: str | None = Query(default=None, alias="range"),
     session: Session = Depends(get_session),
 ):
     start = 0
