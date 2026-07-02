@@ -91,12 +91,16 @@ def test_delete_link(client):
     res_get = client.get(f"/api/links/{link_id}")
     assert res_get.status_code == 404
 
-
 def test_unique_short_name_conflict(client):
-    client.post("/api/links", json={"original_url": "https://x.com", "short_name": "uniq"})
-    res = client.post("/api/links", json={"original_url": "https://y.com", "short_name": "uniq"})
+    payload = {"original_url": "https://x.com", "short_name": "uniq"}
+    client.post("/api/links", json=payload)
+
+    payload_conflict = {"original_url": "https://y.com", "short_name": "uniq"}
+    res = client.post("/api/links", json=payload_conflict)
+
     assert res.status_code == 409
     assert res.json().get("detail") == "Short name already exists"
+
 
 
 # --- Тесты пагинации ---
