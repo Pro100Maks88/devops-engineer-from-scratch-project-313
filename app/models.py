@@ -10,7 +10,7 @@ class Link(SQLModel, table=True):
 
     @property
     def short_url(self) -> str:
-        # Пока используем заглушку localhost:8080. На Render заменим через ENV переменную
+        
         return f"http://localhost:8080/r/{self.short_name}"
 
 class LinkCreate(SQLModel):
