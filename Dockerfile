@@ -25,7 +25,11 @@ COPY public ./public
 
 EXPOSE 80
 
-CMD sh -c "nginx && exec uvicorn app.main:app --host 0.0.0.0 --port 8080"
+#CMD sh -c "nginx && exec uvicorn app.main:app --host 0.0.0.0 --port 8080"
+
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+
 
 
 
