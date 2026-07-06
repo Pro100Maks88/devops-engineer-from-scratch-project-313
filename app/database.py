@@ -10,6 +10,12 @@ if not DATABASE_URL:
         "(например, в docker-compose.yml), а не через .env файл."
     )
 
+
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = "postgresql+psycopg2" + DATABASE_URL[len("postgresql"):]
+elif not DATABASE_URL.startswith("postgresql+psycopg2://"):
+    raise ValueError(f"Неподдерживаемый формат DATABASE_URL: {DATABASE_URL}")
+
 engine = create_engine(
     DATABASE_URL,
     echo=False,
@@ -19,10 +25,10 @@ engine = create_engine(
 def init_db():
     SQLModel.metadata.create_all(engine)
 
-
 def get_session():
     with Session(engine) as session:
         yield session
+
 
 
 
