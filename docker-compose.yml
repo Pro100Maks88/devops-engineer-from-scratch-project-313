@@ -1,13 +1,9 @@
-version: "3.8"
-
 services:
   app:
     build: .
     ports:
       - "8080:8080"
-  
     environment:
-    
       - DATABASE_URL=postgresql+psycopg2://user:password@db:5432/mydb
     restart: unless-stopped
     depends_on:
@@ -30,6 +26,7 @@ services:
 
 volumes:
   pgdata:
+
 
 
 

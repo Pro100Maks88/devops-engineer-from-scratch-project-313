@@ -1,5 +1,4 @@
-.PHONY: run test lint fix clean
-
+.PHONY: run test lint fix clean dev
 
 run:
 	uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
@@ -9,7 +8,6 @@ test:
 		-e DATABASE_URL="postgresql+psycopg2://user:password@db:5432/mydb" \
 		app uv run pytest -v
 
-# Линтер локально
 lint:
 	uv run ruff check .
 
@@ -22,3 +20,4 @@ clean:
 
 dev:
 	docker compose up -d
+
