@@ -1,16 +1,14 @@
 import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlmodel import Session, SQLModel
 
-load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise RuntimeError(
-        "DATABASE_URL не задан. Для PostgreSQL укажите строку подключения в .env, "
-        "например: postgresql+psycopg2://user:password@db:5432/mydb"
+        "DATABASE_URL не задан. Переменная должна быть передана через environment "
+        "(например, в docker-compose.yml), а не через .env файл."
     )
 
 engine = create_engine(
@@ -26,6 +24,7 @@ def init_db():
 def get_session():
     with Session(engine) as session:
         yield session
+
 
 
 
