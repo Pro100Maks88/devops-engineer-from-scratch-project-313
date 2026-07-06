@@ -5,8 +5,10 @@ services:
     build: .
     ports:
       - "8080:8080"
-    env_file:
-      - .env
+  
+    environment:
+    
+      - DATABASE_URL=postgresql+psycopg2://user:password@db:5432/mydb
     restart: unless-stopped
     depends_on:
       db:
@@ -28,5 +30,6 @@ services:
 
 volumes:
   pgdata:
+
 
 
