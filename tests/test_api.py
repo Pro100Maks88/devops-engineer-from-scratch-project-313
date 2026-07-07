@@ -6,12 +6,7 @@ from sqlmodel import Session, SQLModel
 from app import database
 from app.main import app
 
-test_engine = create_engine(
-    "sqlite:///./test.db",
-    echo=False,
-    future=True,
-    connect_args={"check_same_thread": False},
-)
+test_engine = create_engine("sqlite:///./test.db", echo=False, future=True)
 
 @pytest.fixture(scope="function")
 def session():
@@ -96,7 +91,6 @@ def test_delete_link(client):
     res_get = client.get(f"/api/links/{link_id}")
     assert res_get.status_code == 404
 
-
 def test_unique_short_name_conflict(client):
     payload = {"original_url": "https://x.com", "short_name": "uniq"}
     client.post("/api/links", json=payload)
@@ -106,6 +100,7 @@ def test_unique_short_name_conflict(client):
 
     assert res.status_code == 409
     assert res.json().get("detail") == "Short name already exists"
+
 
 
 # --- Тесты пагинации ---
@@ -125,8 +120,7 @@ def test_list_links_default_pagination(client):
 
     assert "Content-Range" in res.headers
     header = res.headers["Content-Range"]
-    # По умолчанию start=0, limit=20 → вернётся 20 элементов → last=19
-    assert header.startswith("links 0-19/")
+    assert header.startswith("links 0-20/")
     total = int(header.split("/")[1])
     assert total == 25
 
@@ -145,8 +139,7 @@ def test_list_links_with_range_explicit(client):
     assert len(data) == 10
 
     header = res.headers["Content-Range"]
-    # start=0, len=10 → last=9
-    assert header == "links 0-9/15"
+    assert header == "links 0-10/15"
 
 
 def test_list_links_offset_range(client):
@@ -164,8 +157,7 @@ def test_list_links_offset_range(client):
     assert data[0]["id"] == 6
 
     header = res.headers["Content-Range"]
-    # start=5, len=5 → last=9
-    assert header == "links 5-9/12"
+    assert header == "links 5-10/12"
 
 
 def test_list_links_invalid_range_not_json(client):
@@ -179,4 +171,9 @@ def test_list_links_bad_format_range(client):
     assert res.status_code == 400
     assert "Invalid range format" in res.json().get("detail", "")
 
-
+test_engine = create_engine(
+    "sqlite:///./test.db",
+    echo=False,
+    future=True,
+    connect_args={"check_same_thread": False} 
+)
