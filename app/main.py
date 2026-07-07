@@ -1,43 +1,32 @@
-import json
-from contextlib import asynccontextmanager
-
-from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
-from sqlalchemy import func
+from fastapi import FastAPI, HTTPException, Depends, status
 from sqlmodel import Session, select
+from typing import List
 
-from app import database
-from app.models import Link, LinkCreate, LinkUpdate
+from .database import engine, get_session
+from .models import Link, LinkCreate, LinkUpdate
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    database.init_db()
-    yield
-
-
-app = FastAPI(
-    title="Short Link Service",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
-
-def get_session() -> Session:
-    with Session(database.engine) as session:
-        yield session
+app = FastAPI()
 
 
 @app.get("/ping")
 def ping():
-    return {"status": "ok"}
+    return "pong"
 
 
-@app.post("/api/links", response_model=Link, status_code=status.HTTP_201_CREATED)
+def _link_to_dict(link: Link) -> dict:
+    """Вспомогательная функция: превращает Link в dict с обязательным short_url"""
+    return {
+        "id": link.id,
+        "original_url": link.original_url,
+        "short_name": link.short_name,
+        "created_at": link.created_at.isoformat(),
+        "short_url": f"/r/{link.short_name}",  
+    }
+
+
+@app.post("/api/links", status_code=status.HTTP_201_CREATED)
 def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
-    existing = session.exec(
-        select(Link).where(Link.short_name == link_in.short_name)
-    ).first()
-
+    existing = session.exec(select(Link).where(Link.short_name == link_in.short_name)).first()
     if existing:
         raise HTTPException(status_code=409, detail="Short name already exists")
 
@@ -45,109 +34,50 @@ def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
     session.add(link)
     session.commit()
     session.refresh(link)
-    return link
+
+    return _link_to_dict(link)
 
 
 @app.get("/api/links")
-def list_links(
-    response: Response,
-    range_param: str | None = Query(default=None, alias="range"),
-    session: Session = Depends(get_session),
-):
-    start = 0
-    end = 20
-
-    if range_param is not None:
-        try:
-            parsed = json.loads(range_param)
-
-            if not isinstance(parsed, list):
-                raise ValueError("Range must be a list")
-            if len(parsed) != 2:
-                raise ValueError("Range must have exactly 2 elements")
-
-            start, end = parsed
-
-            if start < 0 or end < 0:
-                raise ValueError("Start and end must be non-negative")
-            if end <= start:
-                raise ValueError("End must be greater than start")
-
-        except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid range parameter",
-            )
-        except ValueError as e:
-            msg = str(e)
-            if "2 elements" in msg:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid range format",
-                )
-            else:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid range parameter",
-                )
-
-    limit = end - start
-    if limit <= 0:
-        limit = 1
-
-    total_count = session.exec(select(func.count(Link.id))).one()
-
-    statement = select(Link).offset(start).limit(limit)
-    links = session.exec(statement).all()
-
-    response.headers["Content-Range"] = f"links {start}-{end}/{total_count}"
-
-    return links
+def list_links(session: Session = Depends(get_session)):
+    links = session.exec(select(Link)).all()
+    return [_link_to_dict(l) for l in links]
 
 
 @app.get("/api/links/{link_id}")
 def get_link(link_id: int, session: Session = Depends(get_session)):
-    link = session.exec(select(Link).where(Link.id == link_id)).first()
+    link = session.get(Link, link_id)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
-    return link
+    return _link_to_dict(link)
 
 
-@app.put("/api/links/{link_id}", response_model=Link)
-def update_link(
-    link_id: int,
-    link_in: LinkUpdate,
-    session: Session = Depends(get_session),
-):
-    link = session.exec(select(Link).where(Link.id == link_id)).first()
+@app.put("/api/links/{link_id}")
+def update_link(link_id: int, link_in: LinkUpdate, session: Session = Depends(get_session)):
+    link = session.get(Link, link_id)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
 
-    if link_in.short_name is not None and link_in.short_name != link.short_name:
-        existing = session.exec(
-            select(Link).where(Link.short_name == link_in.short_name)
-        ).first()
-        if existing:
-            raise HTTPException(status_code=409, detail="Short name already exists")
-
-    for field, value in link_in.model_dump(exclude_unset=True).items():
-        setattr(link, field, value)
+    update_data = link_in.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(link, key, value)
 
     session.add(link)
     session.commit()
     session.refresh(link)
-    return link
+
+    return _link_to_dict(link)
 
 
 @app.delete("/api/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_link(link_id: int, session: Session = Depends(get_session)):
-    link = session.exec(select(Link).where(Link.id == link_id)).first()
+    link = session.get(Link, link_id)
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
-
     session.delete(link)
     session.commit()
-    return None
+    
+
 
 
 
