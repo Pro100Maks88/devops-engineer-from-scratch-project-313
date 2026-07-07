@@ -19,13 +19,13 @@ def get_session():
 
 
 def get_session_dep() -> Session:
-    
+   
     return next(get_session())
 
 
 @contextmanager
 def lifespan(app: FastAPI):
-    
+   
     database.init_db()
     yield
 
@@ -39,7 +39,7 @@ app = FastAPI(
 
 @app.get("/ping")
 def ping():
-    
+
     return {"data": "pong"}
 
 
@@ -168,7 +168,6 @@ def delete_link(
 
     session.delete(link)
     session.commit()
-    
     return None
 
 

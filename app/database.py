@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -28,8 +27,8 @@ SessionLocal = sessionmaker(
 )
 
 def init_db():
-    """Создаёт таблицы, если их нет."""
     SQLModel.metadata.create_all(bind=engine)
+
 
 
 
