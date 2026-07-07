@@ -2,8 +2,8 @@ import json
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
-from sqlalchemy import func
 from sqlmodel import Session, select
+from sqlalchemy import func
 
 from app import database
 from app.models import Link, LinkCreate, LinkUpdate
@@ -32,7 +32,18 @@ def ping():
     return "pong"
 
 
-@app.post("/api/links", response_model=Link, status_code=status.HTTP_201_CREATED)
+def _to_response_dict(link: Link) -> dict:
+    
+    return {
+        "id": link.id,
+        "original_url": link.original_url,
+        "short_name": link.short_name,
+        "created_at": link.created_at.isoformat(),
+        "short_url": f"/r/{link.short_name}",
+    }
+
+
+@app.post("/api/links", status_code=status.HTTP_201_CREATED)
 def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
     existing = session.exec(
         select(Link).where(Link.short_name == link_in.short_name)
@@ -45,7 +56,8 @@ def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
     session.add(link)
     session.commit()
     session.refresh(link)
-    return link
+
+    return _to_response_dict(link)
 
 
 @app.get("/api/links")
@@ -74,22 +86,13 @@ def list_links(
                 raise ValueError("End must be greater than start")
 
         except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid range parameter",
-            )
+            raise HTTPException(status_code=400, detail="Invalid range parameter")
         except ValueError as e:
             msg = str(e)
             if "2 elements" in msg:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid range format",
-                )
+                raise HTTPException(status_code=400, detail="Invalid range format")
             else:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid range parameter",
-                )
+                raise HTTPException(status_code=400, detail="Invalid range parameter")
 
     limit = end - start
     if limit <= 0:
@@ -102,7 +105,7 @@ def list_links(
 
     response.headers["Content-Range"] = f"links {start}-{end}/{total_count}"
 
-    return links
+    return [_to_response_dict(l) for l in links]
 
 
 @app.get("/api/links/{link_id}")
@@ -110,10 +113,10 @@ def get_link(link_id: int, session: Session = Depends(get_session)):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
-    return link
+    return _to_response_dict(link)
 
 
-@app.put("/api/links/{link_id}", response_model=Link)
+@app.put("/api/links/{link_id}")
 def update_link(
     link_id: int,
     link_in: LinkUpdate,
@@ -136,7 +139,8 @@ def update_link(
     session.add(link)
     session.commit()
     session.refresh(link)
-    return link
+
+    return _to_response_dict(link)
 
 
 @app.delete("/api/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -147,4 +151,3 @@ def delete_link(link_id: int, session: Session = Depends(get_session)):
 
     session.delete(link)
     session.commit()
-    return None
