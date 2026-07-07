@@ -1,8 +1,8 @@
 import os
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlmodel import Session, SQLModel
-
 
 if os.path.exists(".env"):
     load_dotenv()
