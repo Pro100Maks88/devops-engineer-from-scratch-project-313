@@ -1,6 +1,7 @@
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func
 from sqlmodel import Session, select
 
@@ -10,7 +11,6 @@ from app.models import Link, LinkCreate, LinkUpdate
 
 @contextmanager
 def get_session():
-    
     session = database.SessionLocal()
     try:
         yield session
@@ -19,14 +19,13 @@ def get_session():
 
 
 def get_session_dep() -> Session:
-   
     return next(get_session())
 
 
-@contextmanager
-def lifespan(app: FastAPI):
-   
-    database.init_db()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+    await run_in_threadpool(database.init_db)
     yield
 
 
@@ -39,7 +38,6 @@ app = FastAPI(
 
 @app.get("/ping")
 def ping():
-
     return {"data": "pong"}
 
 
@@ -169,5 +167,6 @@ def delete_link(
     session.delete(link)
     session.commit()
     return None
+
 
 
