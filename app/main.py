@@ -29,7 +29,7 @@ def get_session() -> Session:
 
 @app.get("/ping")
 def ping():
-    return {"status": "ok"}
+    return "pong"
 
 
 @app.post("/api/links", response_model=Link, status_code=status.HTTP_201_CREATED)
