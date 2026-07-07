@@ -2,8 +2,8 @@ import json
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
-from sqlmodel import Session, select
 from sqlalchemy import func
+from sqlmodel import Session, select
 
 from app import database
 from app.models import Link, LinkCreate, LinkUpdate
@@ -105,7 +105,7 @@ def list_links(
 
     response.headers["Content-Range"] = f"links {start}-{end}/{total_count}"
 
-    return [_to_response_dict(l) for l in links]
+    return [_to_response_dict(link) for link in links]
 
 
 @app.get("/api/links/{link_id}")
