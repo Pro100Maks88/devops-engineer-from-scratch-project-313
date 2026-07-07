@@ -1,4 +1,5 @@
 import json
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from sqlalchemy import func
@@ -7,6 +8,12 @@ from sqlmodel import Session, select
 from app import database
 from app.models import Link, LinkCreate, LinkUpdate
 
+
+@asynccontextmanager                           
+async def lifespan(app: FastAPI):
+    database.init_db()
+    yield
+    
 app = FastAPI(title="Short Link Service", version="1.0.0")
 
 
