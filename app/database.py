@@ -9,14 +9,13 @@ if os.path.exists(".env"):
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-
 if not DATABASE_URL:
     raise RuntimeError(
-        "DATABASE_URL не задан. Создай .env файл или проверь окружение."
+        "DATABASE_URL не задан. Создай .env файл или проверь настройки CI."
     )
 
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://")
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://")
 
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 
@@ -26,6 +25,7 @@ def init_db():
 def get_session():
     with Session(engine) as session:
         yield session
+
 
 
 
