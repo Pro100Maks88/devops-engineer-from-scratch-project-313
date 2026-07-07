@@ -9,7 +9,7 @@ dependencies = [
     "sentry-sdk>=2.63.0",
     "uvicorn>=0.49.0",
     "sqlmodel>=0.0.38",
-    "psycopg2-binary>=2.9.12",
+    "asyncpg",
 ]
 
 [dependency-groups]
