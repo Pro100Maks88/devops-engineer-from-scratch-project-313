@@ -1,10 +1,5 @@
-import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlmodel import Session, SQLModel
-
-
-
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://")
