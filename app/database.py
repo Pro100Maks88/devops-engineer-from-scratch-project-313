@@ -1,8 +1,8 @@
 import os
+from contextlib import contextmanager
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel
 
 if os.path.exists(".env"):
@@ -20,19 +20,15 @@ if DATABASE_URL.startswith("postgres://"):
 
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 
-SessionLocal = sessionmaker(
-    bind=engine,
-    class_=Session,
-    autoflush=False,
-    autocommit=False,
-)
 
 def init_db():
-    SQLModel.metadata.create_all(bind=engine)
+    SQLModel.metadata.create_all(engine)
 
 
-
-
+@contextmanager
+def get_session():
+    with Session(engine) as session:
+        yield session
 
 
 

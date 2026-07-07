@@ -1,7 +1,7 @@
-from contextlib import asynccontextmanager, contextmanager
+import json
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
-from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func
 from sqlmodel import Session, select
 
@@ -9,23 +9,9 @@ from app import database
 from app.models import Link, LinkCreate, LinkUpdate
 
 
-@contextmanager
-def get_session():
-    session = database.SessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
-
-
-def get_session_dep() -> Session:
-    return next(get_session())
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    
-    await run_in_threadpool(database.init_db)
+    database.init_db()
     yield
 
 
@@ -36,16 +22,18 @@ app = FastAPI(
 )
 
 
+def get_session() -> Session:
+    with Session(database.engine) as session:
+        yield session
+
+
 @app.get("/ping")
 def ping():
-    return {"data": "pong"}
+    return {"status": "ok"}
 
 
 @app.post("/api/links", response_model=Link, status_code=status.HTTP_201_CREATED)
-def create_link(
-    link_in: LinkCreate,
-    session: Session = Depends(get_session_dep),
-):
+def create_link(link_in: LinkCreate, session: Session = Depends(get_session)):
     existing = session.exec(
         select(Link).where(Link.short_name == link_in.short_name)
     ).first()
@@ -64,13 +52,12 @@ def create_link(
 def list_links(
     response: Response,
     range_param: str | None = Query(default=None, alias="range"),
-    session: Session = Depends(get_session_dep),
+    session: Session = Depends(get_session),
 ):
     start = 0
     end = 20
 
     if range_param is not None:
-        import json
         try:
             parsed = json.loads(range_param)
 
@@ -119,10 +106,7 @@ def list_links(
 
 
 @app.get("/api/links/{link_id}")
-def get_link(
-    link_id: int,
-    session: Session = Depends(get_session_dep),
-):
+def get_link(link_id: int, session: Session = Depends(get_session)):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
@@ -133,7 +117,7 @@ def get_link(
 def update_link(
     link_id: int,
     link_in: LinkUpdate,
-    session: Session = Depends(get_session_dep),
+    session: Session = Depends(get_session),
 ):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
     if not link:
@@ -156,10 +140,7 @@ def update_link(
 
 
 @app.delete("/api/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_link(
-    link_id: int,
-    session: Session = Depends(get_session_dep),
-):
+def delete_link(link_id: int, session: Session = Depends(get_session)):
     link = session.exec(select(Link).where(Link.id == link_id)).first()
     if not link:
         raise HTTPException(status_code=404, detail="Link not found")
@@ -167,6 +148,7 @@ def delete_link(
     session.delete(link)
     session.commit()
     return None
+
 
 
 
