@@ -2,13 +2,13 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel
 
 if os.path.exists(".env"):
     load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-
 
 if not DATABASE_URL:
     raise RuntimeError(
@@ -20,12 +20,17 @@ if DATABASE_URL.startswith("postgres://"):
 
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 
-def init_db():
-    SQLModel.metadata.create_all(engine)
+SessionLocal = sessionmaker(
+    bind=engine,
+    class_=Session,
+    autoflush=False,
+    autocommit=False,
+)
 
-def get_session():
-    with Session(engine) as session:
-        yield session
+def init_db():
+    """Создаёт таблицы, если их нет."""
+    SQLModel.metadata.create_all(bind=engine)
+
 
 
 
