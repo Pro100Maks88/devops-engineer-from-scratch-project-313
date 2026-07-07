@@ -23,8 +23,7 @@ app = FastAPI(
 
 
 def get_session() -> Session:
-    with Session(database.engine) as session:
-        yield session
+    return Session(bind=database.engine)
 
 
 @app.get("/ping")
@@ -100,7 +99,9 @@ def list_links(
     statement = select(Link).offset(start).limit(limit)
     links = session.exec(statement).all()
 
-    response.headers["Content-Range"] = f"links {start}-{end}/{total_count}"
+    # Правильный расчёт last для Content-Range
+    last = start + len(links) - 1 if links else -1
+    response.headers["Content-Range"] = f"links {start}-{last}/{total_count}"
 
     return links
 
@@ -148,6 +149,7 @@ def delete_link(link_id: int, session: Session = Depends(get_session)):
     session.delete(link)
     session.commit()
     return None
+
 
 
 
