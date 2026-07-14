@@ -1,4 +1,9 @@
-.PHONY: run test lint fix clean dev
+.PHONY: run run-local test lint fix clean dev
+
+run-local:
+	DATABASE_URL="postgresql+psycopg2://user:password@localhost:5432/mydb" \
+	uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
 
 run:
 	uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
@@ -20,4 +25,5 @@ clean:
 
 dev:
 	docker compose up -d
+
 

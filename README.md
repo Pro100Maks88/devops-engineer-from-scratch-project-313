@@ -21,9 +21,16 @@
    git clone git@github.com:Pro100Maks88/devops-engineer-from-scratch-project-313.git
    cd devops-engineer-from-scratch-project-313
    ```
-2. Запустите проект через Docker Compose (автоматически поднимет БД, бэкенд и Nginx):
+
+2. Локальный звпуск:
    ```bash
-   make run
+   docker compose up -d db
+
+   make run-local
+   
+3. Запуск проекта через Docker Compose (автоматически поднимет БД, бэкенд и Nginx):
+   ```bash
+   make dev
    ```
 Приложение будет доступно на http://localhost:8080
 
