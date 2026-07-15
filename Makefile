@@ -2,9 +2,14 @@
 
 
 run:
+	uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+
+dev:
 	docker compose up -d
 
 test:
+	
 	docker compose run --rm \
 		-e DATABASE_URL="postgresql+psycopg2://user:password@db:5432/mydb" \
 		app uv run pytest -v
@@ -19,8 +24,6 @@ clean:
 	docker compose down -v
 	rm -f uv.lock
 
-dev:
-	docker compose up -d
 
 
 
