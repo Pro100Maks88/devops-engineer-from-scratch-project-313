@@ -9,10 +9,6 @@ class Link(SQLModel, table=True):
     short_name: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    @property
-    def short_url(self) -> str:
-        
-        return f"http://localhost:8080/r/{self.short_name}"
 
 class LinkCreate(SQLModel):
     original_url: str

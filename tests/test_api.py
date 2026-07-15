@@ -6,7 +6,12 @@ from sqlmodel import Session, SQLModel
 from app import database
 from app.main import app
 
-test_engine = create_engine("sqlite:///./test.db", echo=False, future=True)
+test_engine = create_engine(
+    "sqlite:///./test.db",
+    echo=False,
+    future=True,
+    connect_args={"check_same_thread": False} 
+)
 
 @pytest.fixture(scope="function")
 def session():
@@ -31,9 +36,12 @@ def test_create_link(client):
     )
     assert res.status_code == 201
     data = res.json()
+    
     assert data["original_url"] == "https://example.com"
     assert data["short_name"] == "exmpl"
     assert "id" in data
+    assert data["short_url"].endswith("/r/exmpl")
+    assert "/r/" in data["short_url"]
 
 
 def test_list_links(client):
@@ -41,7 +49,11 @@ def test_list_links(client):
     client.post("/api/links", json={"original_url": "https://b.com", "short_name": "b"})
     res = client.get("/api/links")
     assert res.status_code == 200
-    assert len(res.json()) == 2
+    items = res.json()
+    assert len(items) == 2
+    
+    for item in items:
+        assert item["short_url"].endswith(f"/r/{item['short_name']}")
 
 
 def test_get_link_by_id_success(client):
@@ -54,7 +66,9 @@ def test_get_link_by_id_success(client):
 
     res = client.get(f"/api/links/{link_id}")
     assert res.status_code == 200
-    assert res.json()["id"] == link_id
+    data = res.json()
+    assert data["id"] == link_id
+    assert data["short_url"].endswith("/r/c")
 
 
 def test_get_link_by_id_not_found(client):
@@ -75,7 +89,10 @@ def test_update_link(client):
         json={"original_url": "https://d-new.com", "short_name": "d-new"}
     )
     assert res.status_code == 200
-    assert res.json()["original_url"] == "https://d-new.com"
+    data = res.json()
+    assert data["original_url"] == "https://d-new.com"
+    assert data["short_name"] == "d-new"
+    assert data["short_url"].endswith("/r/d-new")
 
 
 def test_delete_link(client):
@@ -91,6 +108,7 @@ def test_delete_link(client):
     res_get = client.get(f"/api/links/{link_id}")
     assert res_get.status_code == 404
 
+
 def test_unique_short_name_conflict(client):
     payload = {"original_url": "https://x.com", "short_name": "uniq"}
     client.post("/api/links", json=payload)
@@ -102,8 +120,6 @@ def test_unique_short_name_conflict(client):
     assert res.json().get("detail") == "Short name already exists"
 
 
-
-# --- Тесты пагинации ---
 
 def test_list_links_default_pagination(client):
     for i in range(25):
@@ -123,6 +139,9 @@ def test_list_links_default_pagination(client):
     assert header.startswith("links 0-20/")
     total = int(header.split("/")[1])
     assert total == 25
+    
+    for item in data:
+        assert item["short_url"].endswith(f"/r/{item['short_name']}")
 
 
 def test_list_links_with_range_explicit(client):
@@ -140,6 +159,9 @@ def test_list_links_with_range_explicit(client):
 
     header = res.headers["Content-Range"]
     assert header == "links 0-10/15"
+    
+    for item in data:
+        assert item["short_url"].endswith(f"/r/{item['short_name']}")
 
 
 def test_list_links_offset_range(client):
@@ -158,6 +180,9 @@ def test_list_links_offset_range(client):
 
     header = res.headers["Content-Range"]
     assert header == "links 5-10/12"
+    
+    for item in data:
+        assert item["short_url"].endswith(f"/r/{item['short_name']}")
 
 
 def test_list_links_invalid_range_not_json(client):
@@ -170,10 +195,3 @@ def test_list_links_bad_format_range(client):
     res = client.get("/api/links?range=[1,2,3]")
     assert res.status_code == 400
     assert "Invalid range format" in res.json().get("detail", "")
-
-test_engine = create_engine(
-    "sqlite:///./test.db",
-    echo=False,
-    future=True,
-    connect_args={"check_same_thread": False} 
-)

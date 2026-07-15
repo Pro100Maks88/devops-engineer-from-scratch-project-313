@@ -1,4 +1,3 @@
-import json
 from typing import Any
 
 from fastapi import HTTPException, Response
@@ -9,20 +8,16 @@ from app.models import Link, LinkCreate, LinkUpdate
 
 
 def _to_response_dict(link: Link) -> dict[str, Any]:
-    
     return {
         "id": link.id,
         "original_url": link.original_url,
         "short_name": link.short_name,
         "created_at": link.created_at.isoformat(),
-        "short_url": f"/r/{link.short_name}",
     }
 
 
 def create_link(link_in: LinkCreate) -> dict[str, Any]:
-    
     with get_session() as session:
-        
         existing = session.exec(
             select(Link).where(Link.short_name == link_in.short_name)
         ).first()
@@ -38,35 +33,22 @@ def create_link(link_in: LinkCreate) -> dict[str, Any]:
         return _to_response_dict(link)
 
 
-def list_links(range_param: str | None, response: Response) -> list[dict[str, Any]]:
+def list_links(
+    start: int,
+    end: int,
+    response: Response,
+) -> list[dict[str, Any]]:
     
-    start = 0
-    end = 20
-
-    if range_param is not None:
-        try:
-            parsed = json.loads(range_param)
-
-            if not isinstance(parsed, list):
-                raise ValueError("Range must be a list")
-            if len(parsed) != 2:
-                raise ValueError("Range must have exactly 2 elements")
-
-            start, end = parsed
-
-            if start < 0 or end < 0:
-                raise ValueError("Start and end must be non-negative")
-            if end <= start:
-                raise ValueError("End must be greater than start")
-
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid range parameter")
-        except ValueError as e:
-            msg = str(e)
-            if "2 elements" in msg:
-                raise HTTPException(status_code=400, detail="Invalid range format")
-            else:
-                raise HTTPException(status_code=400, detail="Invalid range parameter")
+    if start < 0 or end < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Start and end must be non-negative",
+        )
+    if end <= start:
+        raise HTTPException(
+            status_code=400,
+            detail="End must be greater than start",
+        )
 
     limit = end - start
     if limit <= 0:
@@ -82,7 +64,6 @@ def list_links(range_param: str | None, response: Response) -> list[dict[str, An
 
 
 def get_link_by_id(link_id: int) -> dict[str, Any]:
-    
     with get_session() as session:
         link = session.exec(select(Link).where(Link.id == link_id)).first()
         if not link:
@@ -91,13 +72,11 @@ def get_link_by_id(link_id: int) -> dict[str, Any]:
 
 
 def update_link(link_id: int, link_in: LinkUpdate) -> dict[str, Any]:
-    
     with get_session() as session:
         link = session.exec(select(Link).where(Link.id == link_id)).first()
         if not link:
             raise HTTPException(status_code=404, detail="Link not found")
 
-        
         if link_in.short_name is not None and link_in.short_name != link.short_name:
             existing = session.exec(
                 select(Link).where(Link.short_name == link_in.short_name)
@@ -105,7 +84,6 @@ def update_link(link_id: int, link_in: LinkUpdate) -> dict[str, Any]:
             if existing:
                 raise HTTPException(status_code=409, detail="Short name already exists")
 
-        
         for field, value in link_in.model_dump(exclude_unset=True).items():
             setattr(link, field, value)
 
@@ -117,7 +95,6 @@ def update_link(link_id: int, link_in: LinkUpdate) -> dict[str, Any]:
 
 
 def delete_link(link_id: int) -> None:
-    
     with get_session() as session:
         link = session.exec(select(Link).where(Link.id == link_id)).first()
         if not link:
@@ -125,3 +102,5 @@ def delete_link(link_id: int) -> None:
 
         session.delete(link)
         session.commit()
+
+
