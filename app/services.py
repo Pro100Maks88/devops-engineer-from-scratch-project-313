@@ -125,10 +125,3 @@ def delete_link(link_id: int) -> None:
 
         session.delete(link)
         session.commit()
-    
-
-
-
-
-
-
